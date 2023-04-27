@@ -33,11 +33,15 @@ class AccountViewSet(MyBaseViewSet):
             'username')) or User.objects.filter(email=user_data.get('email'))
         if is_existed:
             return Response({"message": "Username already exists"}, status=status.HTTP_403_FORBIDDEN)
+        user_data._mutable = True
         user_data["role"] = RoleData.USER.value.get("id")
+        user_data._mutable = False
         account_serializer = AccountSerializer(data=user_data)
         if account_serializer.is_valid(raise_exception=True):
             account = account_serializer.save()
+            user_data._mutable = True
             user_data['account'] = account.id.hex
+            user_data._mutable = False
             user_serializer = UserSerializer(data=user_data)
             if user_serializer.is_valid(raise_exception=True):
                 user_serializer.save()
@@ -50,6 +54,7 @@ class AccountViewSet(MyBaseViewSet):
         account = Account.objects.filter(username=username)
         if account.exists():
             account = account.first()
+            #{"username":"aaaa", "password":"1234"}
             if not account.is_activate:
                 return Response({"Message": "Account has been deactivated!"}, status=status.HTTP_400_BAD_REQUEST)
             if check_password(password, account.password):
